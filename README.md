@@ -39,6 +39,22 @@ python3 -m http.server 8000
 Opening `index.html` directly from the filesystem works too, though the service
 worker (offline mode) only registers over `http://` or `https://`.
 
+## Deploying
+
+The repo is a static site with no build step, so any host works with zero
+configuration — point it at the repository root and it serves `index.html`.
+
+`vercel.json` sets the headers that matter for a PWA:
+
+- `sw.js` is served `must-revalidate`, so an updated service worker is picked up
+  on the next visit instead of a stale shell being cached forever.
+- `manifest.webmanifest` gets the correct `application/manifest+json` type.
+- Everything under `icons/` is immutable and cached for a year.
+
+On Vercel, importing the repository and deploying needs no framework preset and
+no build command. Note that the production branch must actually contain the app
+before a deploy serves anything.
+
 ## Put it on your phone
 
 Host the folder anywhere static (GitHub Pages, Netlify, Vercel, a Raspberry Pi),
