@@ -2,6 +2,8 @@
    app.js — views, rendering and interaction
    ========================================================== */
 
+import { Store } from './store.js';
+
 (() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -555,7 +557,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => { /* offline cache is optional */ });
+      navigator.serviceWorker.register('/sw.js').catch(() => { /* offline cache is optional */ });
     });
   }
 })();

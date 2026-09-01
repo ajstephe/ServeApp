@@ -29,31 +29,30 @@ every serve is stored on the device in `localStorage`.
 
 ## Run it
 
-Any static file server works:
-
 ```bash
-python3 -m http.server 8000
-# then open http://localhost:8000
+npm install
+npm run dev
+# then open the URL Vite prints (usually http://localhost:5173)
 ```
 
-Opening `index.html` directly from the filesystem works too, though the service
-worker (offline mode) only registers over `http://` or `https://`.
+`npm run build` produces a production build in `dist/`; `npm run preview` serves
+that build locally so you can check it before deploying.
 
 ## Deploying
 
-The repo is a static site with no build step, so any host works with zero
-configuration — point it at the repository root and it serves `index.html`.
+Built with [Vite](https://vitejs.dev). `vercel.json` sets `"framework": "vite"`,
+so on Vercel, importing the repository and deploying needs no configuration —
+build command and output directory (`dist`) are inferred from that.
 
-`vercel.json` sets the headers that matter for a PWA:
+`vercel.json` also sets the headers that matter for a PWA:
 
 - `sw.js` is served `must-revalidate`, so an updated service worker is picked up
   on the next visit instead of a stale shell being cached forever.
 - `manifest.webmanifest` gets the correct `application/manifest+json` type.
 - Everything under `icons/` is immutable and cached for a year.
 
-On Vercel, importing the repository and deploying needs no framework preset and
-no build command. Note that the production branch must actually contain the app
-before a deploy serves anything.
+Note that the production branch must actually contain the app before a deploy
+serves anything.
 
 ## Put it on your phone
 
@@ -105,10 +104,17 @@ use **⋮ → Export backup** before you do.
 
 ```
 index.html               markup and view shells
-css/styles.css           all styling
-js/store.js              storage, sessions, undo stack, stats
-js/app.js                rendering, views, interaction
-sw.js                    offline cache
-manifest.webmanifest     install metadata
-icons/                   app icons
+src/main.js               entry point — imports styles.css and app.js
+src/styles.css            all styling
+src/store.js               storage, sessions, undo stack, stats
+src/app.js                 rendering, views, interaction
+public/sw.js               offline cache (served as-is, unbundled)
+public/manifest.webmanifest  install metadata
+public/icons/               app icons
+vite.config.js            build config
+vercel.json               deploy headers
 ```
+
+`src/` is processed and bundled by Vite (hashed filenames, minified). `public/`
+is copied to the build output unchanged — that's required for `sw.js` and
+`manifest.webmanifest`, which need stable, predictable URLs.
