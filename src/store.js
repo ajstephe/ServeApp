@@ -13,7 +13,7 @@
    }
    ========================================================== */
 
-const Store = (() => {
+export const Store = (() => {
   const KEY = 'serveapp.v1';
   const UNDO_LIMIT = 200;
 
