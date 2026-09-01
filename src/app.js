@@ -67,17 +67,67 @@ import { Store } from './store.js';
   /* ── bottom sheet ────────────────────────────────────── */
   function openSheet(html, wire) {
     const back = $('#sheetBackdrop');
-    $('#sheet').innerHTML = html;
+    const sheet = $('#sheet');
+    back.classList.remove('is-closing');
+    sheet.classList.remove('is-closing');
+    sheet.style.transform = '';
+    $('#sheetBody').innerHTML = html;
     back.hidden = false;
-    if (wire) wire($('#sheet'));
+    if (wire) wire($('#sheetBody'));
   }
+
   function closeSheet() {
-    $('#sheetBackdrop').hidden = true;
-    $('#sheet').innerHTML = '';
+    const back = $('#sheetBackdrop');
+    if (back.hidden || back.classList.contains('is-closing')) return;
+    const sheet = $('#sheet');
+    back.classList.add('is-closing');
+    sheet.classList.add('is-closing');
+    sheet.addEventListener('animationend', () => {
+      back.hidden = true;
+      back.classList.remove('is-closing');
+      sheet.classList.remove('is-closing');
+      sheet.style.transform = '';
+      $('#sheetBody').innerHTML = '';
+    }, { once: true });
   }
+
   $('#sheetBackdrop').addEventListener('click', (e) => {
     if (e.target.id === 'sheetBackdrop') closeSheet();
   });
+
+  // Drag the grabber (or the sheet's own empty space) down to dismiss it,
+  // the way an iOS modal sheet does.
+  (() => {
+    const sheet = $('#sheet');
+    const grabber = $('#sheetGrabber');
+    let startY = 0, dy = 0, dragging = false;
+
+    function onDown(e) {
+      if (e.target !== grabber && e.target !== sheet) return;
+      dragging = true; dy = 0;
+      startY = e.clientY;
+      sheet.classList.add('dragging-sheet');
+      sheet.style.transition = 'none';
+      sheet.setPointerCapture(e.pointerId);
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      dy = Math.max(0, e.clientY - startY);
+      sheet.style.transform = `translateY(${dy}px)`;
+    }
+    function onUp() {
+      if (!dragging) return;
+      dragging = false;
+      sheet.classList.remove('dragging-sheet');
+      sheet.style.transition = '';
+      if (dy > 110) closeSheet();
+      else sheet.style.transform = '';
+    }
+    sheet.addEventListener('pointerdown', onDown);
+    sheet.addEventListener('pointermove', onMove);
+    sheet.addEventListener('pointerup', onUp);
+    sheet.addEventListener('pointercancel', onUp);
+  })();
 
   /* ── COUNT view ──────────────────────────────────────── */
   function renderCount() {
@@ -139,6 +189,11 @@ import { Store } from './store.js';
     btn.classList.remove('bump');
     void btn.offsetWidth;               // restart the animation
     btn.classList.add('bump');
+
+    const digits = $('#tapCount');
+    digits.classList.remove('tick');
+    void digits.offsetWidth;
+    digits.classList.add('tick');
 
     if (count === Store.getGoal()) {
       toast(`🎾 Goal reached — ${count} serves!`);
@@ -216,6 +271,7 @@ import { Store } from './store.js';
     const list = $('#sessionList');
     const all = Store.sessions();
     $('#sessionsCount').textContent = all.length;
+    openRow = null;
 
     if (!all.length) {
       list.innerHTML = `<div class="empty"><strong>No sessions yet</strong>Head to Count and start tapping — a session begins on your first serve.</div>`;
@@ -234,43 +290,99 @@ import { Store } from './store.js';
         const rows = byDay[k].sort((a, b) => b.startedAt - a.startedAt);
         const total = rows.reduce((n, s) => n + s.serves.length, 0);
         return `<div class="day-group">
-          <div class="day-head">
-            <h3>${fmtDayLabel(k)} · ${plural(rows.length, 'session')}</h3>
-            <span class="day-total">${total} serves</span>
-          </div>
-          ${rows.map(sessionCard).join('')}
+          <div class="section-header"><span>${fmtDayLabel(k)} · ${plural(rows.length, 'session')}</span><span class="total">${total}</span></div>
+          <div class="grouped-list">${rows.map(sessionCard).join('')}</div>
         </div>`;
-      }).join('');
+      }).join('') + '<p class="swipe-hint">Tap a session to edit it — swipe left to delete.</p>';
   }
 
   function sessionCard(s) {
     const live = Store.active() && Store.active().id === s.id;
     const meta = `${fmtTime(s.startedAt)}${s.endedAt ? ` – ${fmtTime(s.endedAt)}` : ''} · ${fmtDuration(sessionLength(s))}${live ? ' · live' : ''}`;
-    return `<article class="session-card${live ? ' live' : ''}" data-id="${s.id}">
-      <div class="sc-badge">${s.serves.length}</div>
-      <div class="sc-body">
-        <div class="sc-title">${esc(s.name)}</div>
-        <div class="sc-meta">${meta}</div>
-      </div>
-      <div class="sc-actions">
-        <button class="mini-icon" data-act="edit" aria-label="Edit session">
-          <svg viewBox="0 0 24 24"><path d="M4 20h4L20 8a2.8 2.8 0 0 0-4-4L4 16v4z"/></svg>
-        </button>
-        <button class="mini-icon del" data-act="delete" aria-label="Delete session">
-          <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
-        </button>
-      </div>
-    </article>`;
+    return `<div class="row-wrap" data-id="${s.id}">
+      <button class="row-delete-action" data-act="delete" aria-label="Delete ${esc(s.name)}">Delete</button>
+      <article class="row${live ? ' live' : ''}" data-id="${s.id}" data-act="edit">
+        <span class="row-count">${s.serves.length}</span>
+        <div class="row-body">
+          <div class="row-title">${esc(s.name)}</div>
+          <div class="row-sub">${meta}</div>
+        </div>
+        <svg class="row-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>
+      </article>
+    </div>`;
   }
+
+  /* Swipe-left-to-delete on session rows, iOS list style: drag a row to
+     reveal a Delete button behind it; a plain tap opens Edit; tapping an
+     already-open row closes it instead of opening Edit. Only one row is
+     open at a time, and delegation means freshly rendered rows need no
+     re-wiring. */
+  const ROW_OPEN = -92;
+  let openRow = null;
+
+  function closeOpenRow() {
+    if (!openRow) return;
+    openRow.style.transform = '';
+    openRow.dataset.open = '';
+    openRow = null;
+  }
+
+  (() => {
+    let dragEl = null, startX = 0, startY = 0, dx = 0, deciding = true, horizontal = false;
+
+    document.addEventListener('pointerdown', (e) => {
+      const row = e.target.closest('.row');
+      if (openRow && row !== openRow) closeOpenRow();
+      if (!row || e.target.closest('.row-delete-action')) return;
+      dragEl = row; startX = e.clientX; startY = e.clientY; dx = 0;
+      deciding = true; horizontal = false;
+    });
+
+    document.addEventListener('pointermove', (e) => {
+      if (!dragEl) return;
+      const ex = e.clientX - startX, ey = e.clientY - startY;
+      if (deciding) {
+        if (Math.abs(ex) < 6 && Math.abs(ey) < 6) return;
+        horizontal = Math.abs(ex) > Math.abs(ey);
+        deciding = false;
+        if (horizontal) { dragEl.classList.add('dragging'); dragEl.setPointerCapture(e.pointerId); }
+        else { dragEl = null; return; }
+      }
+      const base = dragEl.dataset.open ? ROW_OPEN : 0;
+      dx = Math.max(ROW_OPEN - 12, Math.min(0, base + ex));
+      dragEl.style.transform = `translateX(${dx}px)`;
+    });
+
+    function release() {
+      if (!dragEl) return;
+      dragEl.classList.remove('dragging');
+      const wasDragged = !deciding && horizontal;
+      if (wasDragged) {
+        if (dx <= ROW_OPEN / 2) {
+          dragEl.style.transform = `translateX(${ROW_OPEN}px)`;
+          dragEl.dataset.open = '1';
+          openRow = dragEl;
+        } else {
+          dragEl.style.transform = '';
+          dragEl.dataset.open = '';
+          if (openRow === dragEl) openRow = null;
+        }
+      } else if (dragEl.dataset.open) {
+        closeOpenRow();
+      } else {
+        editSession(dragEl.dataset.id);
+      }
+      dragEl = null;
+    }
+    document.addEventListener('pointerup', release);
+    document.addEventListener('pointercancel', release);
+  })();
 
   document.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) { closeSheet(); return; }
 
-    const btn = e.target.closest('.session-card [data-act]');
-    if (!btn) return;
-    const id = btn.closest('.session-card').dataset.id;
-    if (btn.dataset.act === 'edit') editSession(id);
-    if (btn.dataset.act === 'delete') confirmDelete(id);
+    const del = e.target.closest('.row-delete-action');
+    if (del) { confirmDelete(del.closest('.row-wrap').dataset.id); return; }
   });
 
   function editSession(id) {
@@ -281,10 +393,10 @@ import { Store } from './store.js';
       <h3>Edit session</h3>
       <p class="sub">${fmtDayLabel(Store.dayKey(s.startedAt))} · ${fmtTime(s.startedAt)}</p>
       <input class="field" id="nameInput" type="text" value="${esc(s.name)}" />
-      <div class="sheet-actions" style="grid-template-columns: 1fr 2fr 1fr; align-items:center;">
-        <button class="btn-secondary" data-adj="-1">−1</button>
-        <div style="text-align:center; font-size:26px; font-weight:800;" id="adjCount">${s.serves.length}</div>
-        <button class="btn-secondary" data-adj="1">+1</button>
+      <div class="sheet-actions" style="grid-template-columns: auto 1fr auto; align-items:center;">
+        <button class="adj-btn" data-adj="-1" aria-label="Remove one serve">−</button>
+        <div class="adj-count" id="adjCount">${s.serves.length}</div>
+        <button class="adj-btn" data-adj="1" aria-label="Add one serve">+</button>
       </div>
       <div class="sheet-actions">
         <button class="btn-secondary" id="resumeBtn">${live ? 'End session' : 'Resume'}</button>
@@ -317,7 +429,7 @@ import { Store } from './store.js';
       <p class="sub">“${esc(s.name)}” with ${plural(s.serves.length, 'serve')} will be removed. This can't be undone.</p>
       <div class="sheet-actions">
         <button class="btn-secondary" data-close>Keep it</button>
-        <button class="btn-primary" id="confirmDel" style="background:linear-gradient(135deg,#ff6b6b,#c94a4a); color:#fff;">Delete</button>
+        <button class="btn-primary destructive" id="confirmDel">Delete</button>
       </div>`, (root) => {
       root.querySelector('#confirmDel').addEventListener('click', () => {
         Store.deleteSession(id);
@@ -384,18 +496,18 @@ import { Store } from './store.js';
     const rows = Store.sessionsOn(selectedDay);
     const total = rows.reduce((n, s) => n + s.serves.length, 0);
     const panel = $('#dayPanel');
+    openRow = null;
 
     if (!rows.length) {
-      panel.innerHTML = `<div class="panel-title"><h3>${fmtDayLabel(selectedDay)}</h3><span>0 serves</span></div>
+      panel.innerHTML = `<div class="section-header"><span>${fmtDayLabel(selectedDay)}</span><span class="total">0</span></div>
         <div class="empty">Nothing logged on this day.</div>`;
       return;
     }
 
-    panel.innerHTML = `<div class="panel-title">
-        <h3>${fmtDayLabel(selectedDay)}</h3>
-        <span>${total} serves · ${plural(rows.length, 'session')}</span>
+    panel.innerHTML = `<div class="section-header">
+        <span>${fmtDayLabel(selectedDay)} · ${plural(rows.length, 'session')}</span><span class="total">${total}</span>
       </div>
-      ${rows.map(sessionCard).join('')}`;
+      <div class="grouped-list">${rows.map(sessionCard).join('')}</div>`;
   }
 
   $('#prevMonth').addEventListener('click', () => {
@@ -489,7 +601,7 @@ import { Store } from './store.js';
           <p class="sub">All sessions and serve counts on this device will be erased.</p>
           <div class="sheet-actions">
             <button class="btn-secondary" data-close>Cancel</button>
-            <button class="btn-primary" id="confirmClear" style="background:linear-gradient(135deg,#ff6b6b,#c94a4a); color:#fff;">Delete all</button>
+            <button class="btn-primary destructive" id="confirmClear">Delete all</button>
           </div>`, (r2) => {
           r2.querySelector('#confirmClear').addEventListener('click', () => {
             Store.clearAll();
@@ -524,6 +636,18 @@ import { Store } from './store.js';
   }
 
   $$('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
+
+  /* ── condensing large-title header ────────────────────── */
+  let scrollTicking = false;
+  function updateTopbar() {
+    scrollTicking = false;
+    $('.topbar').classList.toggle('is-condensed', window.scrollY > 24);
+  }
+  window.addEventListener('scroll', () => {
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(updateTopbar);
+  }, { passive: true });
 
   /* ── keyboard shortcuts (handy on a laptop) ──────────── */
   document.addEventListener('keydown', (e) => {
