@@ -346,7 +346,7 @@ import { Store } from './store.js';
 
   function sessionCard(s) {
     const live = Store.active() && Store.active().id === s.id;
-    const meta = `${fmtTime(s.startedAt)}${s.endedAt ? ` – ${fmtTime(s.endedAt)}` : ''} · ${fmtDuration(sessionLength(s))}${live ? ' · live' : ''}`;
+    const meta = `${fmtTime(s.startedAt)}${s.endedAt ? ` – ${fmtTime(s.endedAt)}` : ''} · ${fmtDuration(sessionLength(s))}${s.overheads.length ? ` · ${plural(s.overheads.length, 'overhead')}` : ''}${live ? ' · live' : ''}`;
     return `<div class="row-wrap" data-id="${s.id}">
       <button class="row-delete-action" data-act="delete" aria-label="Delete ${esc(s.name)}">Delete</button>
       <article class="row${live ? ' live' : ''}" data-id="${s.id}" data-act="edit">
@@ -500,7 +500,7 @@ import { Store } from './store.js';
 
     openSheet(`
       <h3>Serve log</h3>
-      <p class="sub">${esc(s.name)} · ${fmtDayLabel(Store.dayKey(s.startedAt))}</p>
+      <p class="sub">${esc(s.name)} · ${fmtDayLabel(Store.dayKey(s.startedAt))}${s.overheads.length ? ` · ${plural(s.overheads.length, 'overhead')}` : ''}</p>
       <div class="log-summary">
         <div><span class="log-summary-num">${serves.length}</span><span class="log-summary-lbl">Serves</span></div>
         <div><span class="log-summary-num">${gaps.length ? fmtDuration(avgGap) : '—'}</span><span class="log-summary-lbl">Avg gap</span></div>
@@ -536,6 +536,7 @@ import { Store } from './store.js';
   /* ── CALENDAR view ───────────────────────────────────── */
   function renderCalendar() {
     const totals = Store.dailyTotals();
+    const overheadTotals = Store.dailyOverheadTotals();
     const year = calCursor.getFullYear();
     const month = calCursor.getMonth();
     const first = new Date(year, month, 1);
@@ -544,15 +545,16 @@ import { Store } from './store.js';
 
     $('#calMonth').textContent = first.toLocaleDateString([], { month: 'long', year: 'numeric' });
 
-    let monthTotal = 0, monthDays = 0, monthMax = 0;
+    let monthTotal = 0, monthDays = 0, monthMax = 0, monthOverheads = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const k = Store.dayKey(new Date(year, month, d).getTime());
       const n = totals[k] || 0;
       if (n) { monthTotal += n; monthDays++; }
       if (n > monthMax) monthMax = n;
+      monthOverheads += overheadTotals[k] || 0;
     }
     $('#calSummary').textContent = monthTotal
-      ? `${monthTotal} serves over ${plural(monthDays, 'day')}`
+      ? `${monthTotal} serves over ${plural(monthDays, 'day')}${monthOverheads ? ` · ${plural(monthOverheads, 'overhead')}` : ''}`
       : 'No serves logged this month';
 
     const cells = [];
@@ -622,8 +624,10 @@ import { Store } from './store.js';
     $('#sBest').textContent = st.bestDay;
     $('#sDays').textContent = st.activeDays;
     $('#sStreak').textContent = st.streak;
+    $('#sOverheads').textContent = st.totalOverheads;
 
     const totals = Store.dailyTotals();
+    const overheadTotals = Store.dailyOverheadTotals();
     const days = [];
     for (let i = 13; i >= 0; i--) {
       const d = new Date();
@@ -632,7 +636,8 @@ import { Store } from './store.js';
       days.push({ k, n: totals[k] || 0, label: d.toLocaleDateString([], { weekday: 'narrow' }) });
     }
     const max = Math.max(1, ...days.map((d) => d.n));
-    $('#chartTotal').textContent = `${days.reduce((n, d) => n + d.n, 0)} serves`;
+    const chartOverheads = days.reduce((n, d) => n + (overheadTotals[d.k] || 0), 0);
+    $('#chartTotal').textContent = `${days.reduce((n, d) => n + d.n, 0)} serves${chartOverheads ? ` · ${plural(chartOverheads, 'overhead')}` : ''}`;
     $('#chart').innerHTML = days.map((d, i) => `
       <div class="bar-wrap" title="${d.k}: ${plural(d.n, 'serve')}">
         <span class="bar-val">${d.n || ''}</span>
@@ -645,6 +650,7 @@ import { Store } from './store.js';
       ['Best day', st.bestDayKey ? `${st.bestDay} — ${fmtDayLabel(st.bestDayKey)}` : '—'],
       ['Serves per active day', st.activeDays ? Math.round(st.total / st.activeDays) : 0],
       ['Current streak', plural(st.streak, 'day')],
+      ['Total overheads', st.totalOverheads],
     ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join('');
   }
 
@@ -667,17 +673,20 @@ import { Store } from './store.js';
         Math.round(durationMin * 10) / 10,
         s.serves.length,
         Math.round(rate * 10) / 10,
+        s.overheads.length,
         s.endedAt ? 'Completed' : 'Live',
       ];
     });
 
     const totals = Store.dailyTotals();
+    const overheadTotals = Store.dailyOverheadTotals();
     const dayRows = Object.keys(totals).sort()
-      .map((k) => [k, totals[k], Store.sessionsOn(k).length]);
+      .map((k) => [k, totals[k], overheadTotals[k] || 0, Store.sessionsOn(k).length]);
 
     const st = Store.stats();
     const summaryRows = [
       ['Total serves', st.total],
+      ['Total overheads', st.totalOverheads],
       ['Total sessions', st.sessionCount],
       ['Avg serves / session', st.avgPerSession],
       ['Best day', st.bestDayKey || '—'],
@@ -700,6 +709,7 @@ import { Store } from './store.js';
           { header: 'Duration (min)', width: 14 },
           { header: 'Serves', width: 9 },
           { header: 'Serves/min', width: 11 },
+          { header: 'Overheads', width: 11 },
           { header: 'Status', width: 11 },
         ],
         rows: sessionRows,
@@ -709,6 +719,7 @@ import { Store } from './store.js';
         columns: [
           { header: 'Date', width: 12 },
           { header: 'Total Serves', width: 13 },
+          { header: 'Total Overheads', width: 15 },
           { header: 'Sessions', width: 10 },
         ],
         rows: dayRows,

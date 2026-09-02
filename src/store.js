@@ -96,8 +96,22 @@ export const Store = (() => {
     return totals;
   }
 
+  /** Same shape as dailyTotals(), but counting overheads. */
+  function dailyOverheadTotals() {
+    const totals = {};
+    state.sessions.forEach((s) => {
+      const k = dayKey(s.startedAt);
+      totals[k] = (totals[k] || 0) + s.overheads.length;
+    });
+    return totals;
+  }
+
   function totalOn(key) {
     return sessionsOn(key).reduce((n, s) => n + s.serves.length, 0);
+  }
+
+  function totalOverheadsOn(key) {
+    return sessionsOn(key).reduce((n, s) => n + s.overheads.length, 0);
   }
 
   /* ── writes ──────────────────────────────────────────── */
@@ -211,6 +225,7 @@ export const Store = (() => {
   function stats() {
     const all = state.sessions;
     const total = all.reduce((n, s) => n + s.serves.length, 0);
+    const totalOverheads = all.reduce((n, s) => n + s.overheads.length, 0);
     const totals = dailyTotals();
     const days = Object.keys(totals);
     const counted = all.filter((s) => s.serves.length > 0);
@@ -232,6 +247,7 @@ export const Store = (() => {
 
     return {
       total,
+      totalOverheads,
       sessionCount: all.length,
       avgPerSession: counted.length ? Math.round(total / counted.length) : 0,
       bestDay, bestDayKey,
@@ -273,6 +289,7 @@ export const Store = (() => {
 
   return {
     get, getGoal, setGoal, sessions, byId, active, sessionsOn, dailyTotals, totalOn,
+    dailyOverheadTotals, totalOverheadsOn,
     startSession, endSession, resumeSession, addServe, addOverhead, undo, canUndo,
     renameSession, deleteSession, adjust, clearAll,
     stats, dayKey, exportJSON, importJSON, subscribe,
