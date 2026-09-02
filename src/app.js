@@ -147,22 +147,33 @@ import { Store } from './store.js';
   }
 
   /* ── COUNT view ──────────────────────────────────────── */
+  const CTA_ICON = '<path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>';
+  const PLUS_ICON = '<path d="M12 5v14M5 12h14"/>';
+
   function renderCount() {
     const s = Store.active();
     const goal = Store.getGoal();
     const count = s ? s.serves.length : 0;
 
     $('#tapCount').textContent = count;
+    $('#overheadsCount').textContent = s ? s.overheads.length : 0;
+    $('#tapBtn').classList.toggle('is-idle', !s);
+    $('#overheadsBtn').classList.toggle('is-idle', !s);
     $('#sessionName').textContent = s ? s.name : 'No active session';
     $('#liveDot').classList.toggle('live', !!s);
     $('#endSessionBtn').hidden = !s;
+    $('#sessionStrip').classList.toggle('is-tappable', !!s);
     $('#goalBtn').textContent = goal;
 
     const pct = Math.min(1, count / goal);
     $('#ringFill').style.strokeDashoffset = String(RING_LEN * (1 - pct));
 
+    $('#undoBtn').hidden = !s;
     $('#undoBtn').disabled = !Store.canUndo();
-    $('#newSessionBtn').lastChild.textContent = s ? ' New session' : ' Start session';
+    $('#actionRow').classList.toggle('is-idle', !s);
+    $('#newSessionBtn').classList.toggle('pill-btn-cta', !s);
+    $('#newSessionIcon').innerHTML = s ? PLUS_ICON : CTA_ICON;
+    $('#newSessionBtn').lastChild.textContent = s ? ' New session' : ' Start Session';
 
     const todayKey = Store.dayKey(Date.now());
     $('#statToday').textContent = Store.totalOn(todayKey);
@@ -177,7 +188,7 @@ import { Store } from './store.js';
     if (!s) {
       $('#sessionClock').textContent = '00:00';
       $('#sessionRate').textContent = '0.0 / min';
-      $('#tapHint').textContent = 'tap anywhere in the circle';
+      $('#tapHint').textContent = 'start a session to begin';
       return;
     }
     const elapsed = sessionLength(s);
@@ -236,13 +247,38 @@ import { Store } from './store.js';
     buzz(12);
   }
 
+  function countOverhead() {
+    Store.addOverhead();
+    const btn = $('#overheadsBtn');
+    btn.classList.remove('bump');
+    void btn.offsetWidth;
+    btn.classList.add('bump');
+    const digits = $('#overheadsCount');
+    digits.classList.remove('tick');
+    void digits.offsetWidth;
+    digits.classList.add('tick');
+    buzz(12);
+  }
+
   $('#tapBtn').addEventListener('click', countServe);
+  $('#overheadsBtn').addEventListener('click', countOverhead);
+
+  // The session strip doubles as a shortcut into the active session's serve
+  // log — everywhere else in the app, tapping a row for detail is already
+  // the pattern. The End button inside it stays its own separate target.
+  $('#sessionStrip').addEventListener('click', (e) => {
+    if (e.target.closest('#endSessionBtn')) return;
+    const s = Store.active();
+    if (s) renderServeLog(s.id);
+  });
 
   $('#undoBtn').addEventListener('click', () => {
-    const s = Store.undo();
-    if (!s) return toast('Nothing to undo');
+    const result = Store.undo();
+    if (!result) return toast('Nothing to undo');
+    const { session: s, type } = result;
     buzz(20);
-    toast(`Removed one serve — ${s.name} at ${s.serves.length}`);
+    const count = type === 'overhead' ? s.overheads.length : s.serves.length;
+    toast(`Removed one ${type} — ${s.name} at ${count}`);
   });
 
   $('#endSessionBtn').addEventListener('click', () => {
@@ -327,7 +363,7 @@ import { Store } from './store.js';
 
   function sessionCard(s) {
     const live = Store.active() && Store.active().id === s.id;
-    const meta = `${fmtTime(s.startedAt)}${s.endedAt ? ` – ${fmtTime(s.endedAt)}` : ''} · ${fmtDuration(sessionLength(s))}${live ? ' · live' : ''}`;
+    const meta = `${fmtTime(s.startedAt)}${s.endedAt ? ` – ${fmtTime(s.endedAt)}` : ''} · ${fmtDuration(sessionLength(s))}${s.overheads.length ? ` · ${plural(s.overheads.length, 'overhead')}` : ''}${live ? ' · live' : ''}`;
     return `<div class="row-wrap" data-id="${s.id}">
       <button class="row-delete-action" data-act="delete" aria-label="Delete ${esc(s.name)}">Delete</button>
       <article class="row${live ? ' live' : ''}" data-id="${s.id}" data-act="edit">
@@ -427,7 +463,8 @@ import { Store } from './store.js';
         <div class="adj-count" id="adjCount">${s.serves.length}</div>
         <button class="adj-btn" data-adj="1" aria-label="Add one serve">+</button>
       </div>
-      <div class="sheet-actions">
+      <button class="ghost-btn" id="viewLogBtn" style="width:100%; margin: 12px 0 4px;">📈 View serve log</button>
+      <div class="sheet-actions" style="margin-top:12px;">
         <button class="btn-secondary" id="resumeBtn">${live ? 'End session' : 'Resume'}</button>
         <button class="btn-primary" id="saveBtn">Save</button>
       </div>`, (root) => {
@@ -437,6 +474,7 @@ import { Store } from './store.js';
           root.querySelector('#adjCount').textContent = Store.byId(id).serves.length;
         });
       });
+      root.querySelector('#viewLogBtn').addEventListener('click', () => renderServeLog(id));
       root.querySelector('#resumeBtn').addEventListener('click', () => {
         if (live) { Store.endSession(id); toast('Session ended'); }
         else { Store.resumeSession(id); toast(`Resumed ${Store.byId(id).name}`); }
@@ -448,6 +486,50 @@ import { Store } from './store.js';
         toast('Session updated');
       });
     });
+  }
+
+  /* ── Serve log ───────────────────────────────────────── */
+  // Every serve's timestamp is already recorded (that's how the app derives
+  // duration and rate elsewhere) — this just surfaces it directly: each
+  // serve in order, with the gap since the one before it.
+  function renderServeLog(id) {
+    const s = Store.byId(id);
+    if (!s) return;
+    const serves = s.serves;
+    const gaps = [];
+    for (let i = 1; i < serves.length; i++) gaps.push(serves[i] - serves[i - 1]);
+    const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+    const fastest = gaps.length ? Math.min(...gaps) : 0;
+    const slowest = gaps.length ? Math.max(...gaps) : 0;
+
+    const items = serves.map((ts, i) => ({
+      n: i + 1,
+      ts,
+      gap: i === 0 ? null : ts - serves[i - 1],
+    }));
+
+    const rows = items.map((it) => `
+      <div class="log-row">
+        <span class="log-index">${it.n}</span>
+        <span class="log-time">${fmtTime(it.ts)}</span>
+        <span class="log-gap">${it.gap === null ? 'First serve' : '+' + fmtDuration(it.gap)}</span>
+      </div>`).join('');
+
+    openSheet(`
+      <h3>Serve log</h3>
+      <p class="sub">${esc(s.name)} · ${fmtDayLabel(Store.dayKey(s.startedAt))}${s.overheads.length ? ` · ${plural(s.overheads.length, 'overhead')}` : ''}</p>
+      <div class="log-summary">
+        <div><span class="log-summary-num">${serves.length}</span><span class="log-summary-lbl">Serves</span></div>
+        <div><span class="log-summary-num">${gaps.length ? fmtDuration(avgGap) : '—'}</span><span class="log-summary-lbl">Avg gap</span></div>
+        <div><span class="log-summary-num">${gaps.length ? fmtDuration(fastest) : '—'}</span><span class="log-summary-lbl">Fastest</span></div>
+        <div><span class="log-summary-num">${gaps.length ? fmtDuration(slowest) : '—'}</span><span class="log-summary-lbl">Slowest</span></div>
+      </div>
+      ${serves.length
+        ? `<div class="log-list">${rows}</div>`
+        : `<div class="empty">No serves logged yet.</div>`}
+      <div class="sheet-actions" style="grid-template-columns: 1fr; margin-top: 14px;">
+        <button class="btn-secondary" data-close>Close</button>
+      </div>`);
   }
 
   function confirmDelete(id) {
@@ -471,6 +553,7 @@ import { Store } from './store.js';
   /* ── CALENDAR view ───────────────────────────────────── */
   function renderCalendar() {
     const totals = Store.dailyTotals();
+    const overheadTotals = Store.dailyOverheadTotals();
     const year = calCursor.getFullYear();
     const month = calCursor.getMonth();
     const first = new Date(year, month, 1);
@@ -479,15 +562,16 @@ import { Store } from './store.js';
 
     $('#calMonth').textContent = first.toLocaleDateString([], { month: 'long', year: 'numeric' });
 
-    let monthTotal = 0, monthDays = 0, monthMax = 0;
+    let monthTotal = 0, monthDays = 0, monthMax = 0, monthOverheads = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const k = Store.dayKey(new Date(year, month, d).getTime());
       const n = totals[k] || 0;
       if (n) { monthTotal += n; monthDays++; }
       if (n > monthMax) monthMax = n;
+      monthOverheads += overheadTotals[k] || 0;
     }
     $('#calSummary').textContent = monthTotal
-      ? `${monthTotal} serves over ${plural(monthDays, 'day')}`
+      ? `${monthTotal} serves over ${plural(monthDays, 'day')}${monthOverheads ? ` · ${plural(monthOverheads, 'overhead')}` : ''}`
       : 'No serves logged this month';
 
     const cells = [];
@@ -557,8 +641,10 @@ import { Store } from './store.js';
     $('#sBest').textContent = st.bestDay;
     $('#sDays').textContent = st.activeDays;
     $('#sStreak').textContent = st.streak;
+    $('#sOverheads').textContent = st.totalOverheads;
 
     const totals = Store.dailyTotals();
+    const overheadTotals = Store.dailyOverheadTotals();
     const days = [];
     for (let i = 13; i >= 0; i--) {
       const d = new Date();
@@ -567,7 +653,8 @@ import { Store } from './store.js';
       days.push({ k, n: totals[k] || 0, label: d.toLocaleDateString([], { weekday: 'narrow' }) });
     }
     const max = Math.max(1, ...days.map((d) => d.n));
-    $('#chartTotal').textContent = `${days.reduce((n, d) => n + d.n, 0)} serves`;
+    const chartOverheads = days.reduce((n, d) => n + (overheadTotals[d.k] || 0), 0);
+    $('#chartTotal').textContent = `${days.reduce((n, d) => n + d.n, 0)} serves${chartOverheads ? ` · ${plural(chartOverheads, 'overhead')}` : ''}`;
     $('#chart').innerHTML = days.map((d, i) => `
       <div class="bar-wrap" title="${d.k}: ${plural(d.n, 'serve')}">
         <span class="bar-val">${d.n || ''}</span>
@@ -580,6 +667,7 @@ import { Store } from './store.js';
       ['Best day', st.bestDayKey ? `${st.bestDay} — ${fmtDayLabel(st.bestDayKey)}` : '—'],
       ['Serves per active day', st.activeDays ? Math.round(st.total / st.activeDays) : 0],
       ['Current streak', plural(st.streak, 'day')],
+      ['Total overheads', st.totalOverheads],
     ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join('');
   }
 
@@ -602,17 +690,20 @@ import { Store } from './store.js';
         Math.round(durationMin * 10) / 10,
         s.serves.length,
         Math.round(rate * 10) / 10,
+        s.overheads.length,
         s.endedAt ? 'Completed' : 'Live',
       ];
     });
 
     const totals = Store.dailyTotals();
+    const overheadTotals = Store.dailyOverheadTotals();
     const dayRows = Object.keys(totals).sort()
-      .map((k) => [k, totals[k], Store.sessionsOn(k).length]);
+      .map((k) => [k, totals[k], overheadTotals[k] || 0, Store.sessionsOn(k).length]);
 
     const st = Store.stats();
     const summaryRows = [
       ['Total serves', st.total],
+      ['Total overheads', st.totalOverheads],
       ['Total sessions', st.sessionCount],
       ['Avg serves / session', st.avgPerSession],
       ['Best day', st.bestDayKey || '—'],
@@ -635,6 +726,7 @@ import { Store } from './store.js';
           { header: 'Duration (min)', width: 14 },
           { header: 'Serves', width: 9 },
           { header: 'Serves/min', width: 11 },
+          { header: 'Overheads', width: 11 },
           { header: 'Status', width: 11 },
         ],
         rows: sessionRows,
@@ -644,6 +736,7 @@ import { Store } from './store.js';
         columns: [
           { header: 'Date', width: 12 },
           { header: 'Total Serves', width: 13 },
+          { header: 'Total Overheads', width: 15 },
           { header: 'Sessions', width: 10 },
         ],
         rows: dayRows,

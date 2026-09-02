@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
-<meta name="theme-color" content="#000000" />
+<meta name="theme-color" content="#f7f5f2" />
 <meta name="description" content="Tap to count tennis serves, review sessions, and track your practice on a calendar." />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="ServeApp" />
 <title>ServeApp — Tennis Serve Counter</title>
 <link rel="manifest" href="/manifest.webmanifest" />
@@ -16,11 +16,18 @@
 <body>
   <div class="aurora" aria-hidden="true">
     <span class="glow"></span>
+    <span class="glow-2"></span>
   </div>
+  <div class="grain" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-ball" aria-hidden="true"></span>
+      <span class="brand-ball" aria-hidden="true">
+        <svg class="brand-ball-seam" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M50,-6 C1,29 99,71 50,106" transform="rotate(24 50 50)"
+            fill="none" stroke="#fafcf5" stroke-width="9" stroke-linecap="round" opacity="0.85" />
+        </svg>
+      </span>
       <div>
         <h1>ServeApp</h1>
         <p id="topbarSub">Tap. Track. Improve.</p>
@@ -42,31 +49,50 @@
             <div class="strip-meta"><span id="sessionClock">00:00</span> · <span id="sessionRate">0.0 / min</span></div>
           </div>
         </div>
-        <button class="ghost-btn" id="endSessionBtn" hidden>End</button>
+        <div class="strip-right">
+          <button class="ghost-btn" id="endSessionBtn" hidden>End</button>
+          <svg class="strip-chevron row-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </div>
       </div>
 
       <div class="counter-wrap">
+        <button class="overheads-btn" id="overheadsBtn" aria-label="Count one overhead">
+          <span class="overheads-count" id="overheadsCount">0</span>
+          <span class="overheads-label">OVERHEADS</span>
+        </button>
         <div class="ring-stack">
           <svg class="progress-ring" viewBox="0 0 240 240" aria-hidden="true">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#9b5fb8" />
+                <stop offset="100%" stop-color="#5c2d74" />
+              </linearGradient>
+            </defs>
             <circle class="ring-track" cx="120" cy="120" r="110" />
             <circle class="ring-fill" id="ringFill" cx="120" cy="120" r="110" />
           </svg>
           <button class="tap-btn" id="tapBtn" aria-label="Count one serve">
-            <span class="tap-count" id="tapCount">0</span>
-            <span class="tap-label">SERVES</span>
-            <span class="tap-hint" id="tapHint">tap anywhere in the circle</span>
+            <svg class="tap-seam" viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M50,-6 C1,29 99,71 50,106" transform="rotate(24 50 50)"
+                fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" opacity="0.18" />
+            </svg>
+            <div class="tap-content">
+              <span class="tap-count" id="tapCount">0</span>
+              <span class="tap-label">SERVES</span>
+              <span class="tap-hint" id="tapHint">tap anywhere in the circle</span>
+            </div>
           </button>
           <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
         </div>
       </div>
 
-      <div class="action-row">
+      <div class="action-row" id="actionRow">
         <button class="pill-btn danger" id="undoBtn" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14H8"/></svg>
           Undo
         </button>
         <button class="pill-btn" id="newSessionBtn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="newSessionIcon"><path d="M12 5v14M5 12h14"/></svg>
           New session
         </button>
       </div>
@@ -124,6 +150,7 @@
         <div class="stat-card"><span class="stat-num" id="sBest">0</span><span class="stat-lbl">Best day</span></div>
         <div class="stat-card"><span class="stat-num" id="sDays">0</span><span class="stat-lbl">Active days</span></div>
         <div class="stat-card"><span class="stat-num" id="sStreak">0</span><span class="stat-lbl">Day streak</span></div>
+        <div class="stat-card"><span class="stat-num" id="sOverheads">0</span><span class="stat-lbl">Overheads</span></div>
       </div>
       <div class="panel">
         <div class="panel-head"><h3>Last 14 days</h3><span class="chip" id="chartTotal">0</span></div>

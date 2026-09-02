@@ -31,7 +31,10 @@ export const Store = (() => {
       if (!raw) return blank();
       const parsed = JSON.parse(raw);
       if (!parsed || !Array.isArray(parsed.sessions)) return blank();
-      return Object.assign(blank(), parsed);
+      const merged = Object.assign(blank(), parsed);
+      // Sessions saved before overheads existed won't have the array.
+      merged.sessions.forEach((s) => { if (!Array.isArray(s.overheads)) s.overheads = []; });
+      return merged;
     } catch (err) {
       console.warn('ServeApp: could not read saved data', err);
       return blank();
@@ -93,13 +96,27 @@ export const Store = (() => {
     return totals;
   }
 
+  /** Same shape as dailyTotals(), but counting overheads. */
+  function dailyOverheadTotals() {
+    const totals = {};
+    state.sessions.forEach((s) => {
+      const k = dayKey(s.startedAt);
+      totals[k] = (totals[k] || 0) + s.overheads.length;
+    });
+    return totals;
+  }
+
   function totalOn(key) {
     return sessionsOn(key).reduce((n, s) => n + s.serves.length, 0);
   }
 
+  function totalOverheadsOn(key) {
+    return sessionsOn(key).reduce((n, s) => n + s.overheads.length, 0);
+  }
+
   /* ── writes ──────────────────────────────────────────── */
   function startSession(name, ts = Date.now()) {
-    const s = { id: uid(), name: (name || '').trim() || defaultName(ts), startedAt: ts, endedAt: null, serves: [] };
+    const s = { id: uid(), name: (name || '').trim() || defaultName(ts), startedAt: ts, endedAt: null, serves: [], overheads: [] };
     // Only one session runs at a time.
     const current = active();
     if (current) current.endedAt = current.endedAt || ts;
@@ -140,17 +157,30 @@ export const Store = (() => {
     return s;
   }
 
-  /** Reverses the most recent counted serve. Returns the session it came from. */
+  /** Counts one overhead, auto-starting a session when none is running. */
+  function addOverhead(ts = Date.now()) {
+    let s = active();
+    if (!s) s = startSession(null, ts);
+    s.overheads.push(ts);
+    undoStack.push({ type: 'overhead', sessionId: s.id, ts });
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    emit();
+    return s;
+  }
+
+  /** Reverses the most recent counted serve or overhead. Returns
+   *  { session, type } for whichever it was. */
   function undo() {
     const op = undoStack.pop();
     if (!op) return null;
     const s = byId(op.sessionId);
     if (!s) return undo();          // session was deleted — skip to the next op
-    const i = s.serves.lastIndexOf(op.ts);
-    if (i !== -1) s.serves.splice(i, 1);
-    else s.serves.pop();
+    const arr = op.type === 'overhead' ? s.overheads : s.serves;
+    const i = arr.lastIndexOf(op.ts);
+    if (i !== -1) arr.splice(i, 1);
+    else arr.pop();
     emit();
-    return s;
+    return { session: s, type: op.type };
   }
 
   function renameSession(id, name) {
@@ -195,6 +225,7 @@ export const Store = (() => {
   function stats() {
     const all = state.sessions;
     const total = all.reduce((n, s) => n + s.serves.length, 0);
+    const totalOverheads = all.reduce((n, s) => n + s.overheads.length, 0);
     const totals = dailyTotals();
     const days = Object.keys(totals);
     const counted = all.filter((s) => s.serves.length > 0);
@@ -216,6 +247,7 @@ export const Store = (() => {
 
     return {
       total,
+      totalOverheads,
       sessionCount: all.length,
       avgPerSession: counted.length ? Math.round(total / counted.length) : 0,
       bestDay, bestDayKey,
@@ -243,6 +275,7 @@ export const Store = (() => {
         startedAt: s.startedAt || Date.now(),
         endedAt: s.endedAt || null,
         serves: s.serves.filter((n) => typeof n === 'number'),
+        overheads: Array.isArray(s.overheads) ? s.overheads.filter((n) => typeof n === 'number') : [],
       });
       added++;
     });
@@ -256,7 +289,8 @@ export const Store = (() => {
 
   return {
     get, getGoal, setGoal, sessions, byId, active, sessionsOn, dailyTotals, totalOn,
-    startSession, endSession, resumeSession, addServe, undo, canUndo,
+    dailyOverheadTotals, totalOverheadsOn,
+    startSession, endSession, resumeSession, addServe, addOverhead, undo, canUndo,
     renameSession, deleteSession, adjust, clearAll,
     stats, dayKey, exportJSON, importJSON, subscribe,
   };
