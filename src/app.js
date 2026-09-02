@@ -160,6 +160,7 @@ import { Store } from './store.js';
     if (!s) {
       $('#sessionClock').textContent = '00:00';
       $('#sessionRate').textContent = '0.0 / min';
+      $('#tapHint').textContent = 'tap anywhere in the circle';
       return;
     }
     const elapsed = sessionLength(s);
@@ -167,6 +168,17 @@ import { Store } from './store.js';
     const mins = elapsed / 60000;
     const rate = mins > 0.1 ? s.serves.length / mins : 0;
     $('#sessionRate').textContent = `${rate.toFixed(1)} / min`;
+
+    // Once serving has started, the instructional hint gives way to a live
+    // between-serve timer — the overall session clock above already covers
+    // "how long have I been going"; this covers "how long since my last one".
+    const hint = $('#tapHint');
+    if (s.serves.length) {
+      const sinceLast = Date.now() - s.serves[s.serves.length - 1];
+      hint.textContent = `${fmtDuration(sinceLast)} since last serve`;
+    } else {
+      hint.textContent = 'tap anywhere in the circle';
+    }
   }
 
   function spawnFx(count) {
@@ -554,6 +566,90 @@ import { Store } from './store.js';
     ].map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join('');
   }
 
+  /* ── Excel export ────────────────────────────────────── */
+  // The xlsx builder (and its jszip dependency) are only pulled in when
+  // this actually runs, via a dynamic import — most sessions never touch
+  // it, so it shouldn't cost anyone bundle size on every load.
+  async function exportXLSXFile() {
+    const { buildWorkbook } = await import('./xlsx.js');
+
+    const sessions = [...Store.sessions()].sort((a, b) => a.startedAt - b.startedAt);
+    const sessionRows = sessions.map((s) => {
+      const durationMin = sessionLength(s) / 60000;
+      const rate = durationMin > 0.1 ? s.serves.length / durationMin : 0;
+      return [
+        Store.dayKey(s.startedAt),
+        s.name,
+        fmtTime(s.startedAt),
+        s.endedAt ? fmtTime(s.endedAt) : '',
+        Math.round(durationMin * 10) / 10,
+        s.serves.length,
+        Math.round(rate * 10) / 10,
+        s.endedAt ? 'Completed' : 'Live',
+      ];
+    });
+
+    const totals = Store.dailyTotals();
+    const dayRows = Object.keys(totals).sort()
+      .map((k) => [k, totals[k], Store.sessionsOn(k).length]);
+
+    const st = Store.stats();
+    const summaryRows = [
+      ['Total serves', st.total],
+      ['Total sessions', st.sessionCount],
+      ['Avg serves / session', st.avgPerSession],
+      ['Best day', st.bestDayKey || '—'],
+      ['Best day serves', st.bestDay],
+      ['Best session', st.bestSessionName || '—'],
+      ['Best session serves', st.bestSession],
+      ['Active days', st.activeDays],
+      ['Current streak (days)', st.streak],
+      ['Exported', new Date().toLocaleString()],
+    ];
+
+    const blob = await buildWorkbook([
+      {
+        name: 'Sessions',
+        columns: [
+          { header: 'Date', width: 12 },
+          { header: 'Session', width: 26 },
+          { header: 'Start', width: 10 },
+          { header: 'End', width: 10 },
+          { header: 'Duration (min)', width: 14 },
+          { header: 'Serves', width: 9 },
+          { header: 'Serves/min', width: 11 },
+          { header: 'Status', width: 11 },
+        ],
+        rows: sessionRows,
+      },
+      {
+        name: 'Daily Totals',
+        columns: [
+          { header: 'Date', width: 12 },
+          { header: 'Total Serves', width: 13 },
+          { header: 'Sessions', width: 10 },
+        ],
+        rows: dayRows,
+      },
+      {
+        name: 'Summary',
+        columns: [
+          { header: 'Metric', width: 22 },
+          { header: 'Value', width: 24 },
+        ],
+        rows: summaryRows,
+      },
+    ]);
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `serveapp-export-${Store.dayKey(Date.now())}.xlsx`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    closeSheet();
+    toast('Excel file downloaded');
+  }
+
   /* ── data menu ───────────────────────────────────────── */
   $('#menuBtn').addEventListener('click', () => {
     openSheet(`
@@ -561,6 +657,7 @@ import { Store } from './store.js';
       <p class="sub">Everything is stored on this device only. Export a backup before clearing your browser data.</p>
       <ul class="sheet-menu">
         <li><button id="exportBtn">⬇︎ Export backup (.json)</button></li>
+        <li><button id="exportXlsxBtn">📊 Export as Excel (.xlsx)</button></li>
         <li><button id="importBtn">⬆︎ Import backup</button></li>
         <li><button id="clearBtn" class="destructive">Delete all data</button></li>
         <li><button data-close>Close</button></li>
@@ -575,6 +672,20 @@ import { Store } from './store.js';
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         closeSheet();
         toast('Backup downloaded');
+      });
+
+      root.querySelector('#exportXlsxBtn').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Preparing…';
+        try {
+          await exportXLSXFile();
+        } catch (err) {
+          toast("Couldn't build the Excel file");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '📊 Export as Excel (.xlsx)';
+        }
       });
 
       const file = root.querySelector('#importFile');

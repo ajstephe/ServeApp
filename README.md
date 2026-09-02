@@ -3,13 +3,17 @@
 A tap-to-count tracker for tennis serves. Big button, instant undo, one entry per
 practice session, and a calendar that shows how much work you have actually put in.
 
-No accounts, no network, no build step — it is plain HTML, CSS and JavaScript, and
-every serve is stored on the device in `localStorage`.
+No accounts, no server — it is a static Vite app, and every serve is stored on the
+device in `localStorage`.
 
 ## Features
 
 - **One-tap counting.** A large dial in the middle of the screen; each tap logs a
   serve with a timestamp, a ripple and a short haptic buzz.
+- **Two timers.** The session strip shows overall elapsed time and pace
+  (serves/min) since the session started; the dial itself shows time since your
+  *last* serve, for pacing between serves — it starts once you've tapped at least
+  once and resets to zero on every tap.
 - **Undo.** The Undo button reverses the last serve you counted — it walks back
   through a stack, so repeated taps keep peeling off mistakes (works across
   sessions too).
@@ -22,8 +26,9 @@ every serve is stored on the device in `localStorage`.
   a current day-streak and a 14-day bar chart.
 - **Session goal.** Set a target (default 50) and the ring around the dial fills
   as you close in on it.
-- **Backup.** Export everything to a `.json` file and import it back on another
-  device or browser.
+- **Export.** A `.json` backup for re-importing on another device or browser, or
+  a `.xlsx` workbook (Sessions, Daily Totals and Summary sheets) for opening in
+  Excel, Numbers or Google Sheets.
 - **Offline / installable.** A service worker caches the app shell, so it runs
   with no signal — on court, in airplane mode.
 
@@ -108,6 +113,7 @@ src/main.js               entry point — imports styles.css and app.js
 src/styles.css            all styling
 src/store.js               storage, sessions, undo stack, stats
 src/app.js                 rendering, views, interaction
+src/xlsx.js                minimal .xlsx writer, loaded on demand (Export)
 public/sw.js               offline cache (served as-is, unbundled)
 public/manifest.webmanifest  install metadata
 public/icons/               app icons
