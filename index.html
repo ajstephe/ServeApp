@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<meta name="theme-color" content="#f6f1fa" />
+<meta name="theme-color" content="#f7f5f2" />
 <meta name="description" content="Tap to count tennis serves, review sessions, and track your practice on a calendar." />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -16,7 +16,9 @@
 <body>
   <div class="aurora" aria-hidden="true">
     <span class="glow"></span>
+    <span class="glow-2"></span>
   </div>
+  <div class="grain" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand">
@@ -51,6 +53,12 @@
       <div class="counter-wrap">
         <div class="ring-stack">
           <svg class="progress-ring" viewBox="0 0 240 240" aria-hidden="true">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#9b5fb8" />
+                <stop offset="100%" stop-color="#5c2d74" />
+              </linearGradient>
+            </defs>
             <circle class="ring-track" cx="120" cy="120" r="110" />
             <circle class="ring-fill" id="ringFill" cx="120" cy="120" r="110" />
           </svg>
