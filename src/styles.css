@@ -1,24 +1,24 @@
 /* ==========================================================
    ServeApp — tennis serve counter
-   A bright Wimbledon-flavoured theme: soft lavender-white
-   materials, purple-and-green courtside accents, spring
-   motion, grouped lists, and a sheet with a grabber that
-   actually drags.
+   A bright Wimbledon-flavoured theme: neutral off-white
+   materials with purple and courtside green kept as accents
+   (not tinting every surface), spring motion, grouped lists,
+   and a sheet with a grabber that actually drags.
    ========================================================== */
 
 :root {
-  --bg: #f6f1fa;
+  --bg: #f7f5f2;
   --bg-elevated: #ffffff;
-  --surface: linear-gradient(165deg, rgba(92, 45, 116, 0.075), rgba(92, 45, 116, 0.03));
-  --surface-strong: rgba(92, 45, 116, 0.10);
-  --surface-press: rgba(92, 45, 116, 0.16);
-  --hairline: #e7dcee;
-  --hairline-soft: rgba(92, 45, 116, 0.10);
-  --text: #241726;
-  --text-2: #7a6b82;
-  --text-3: #c3b5cc;
+  --surface: linear-gradient(165deg, rgba(32, 28, 30, 0.045), rgba(32, 28, 30, 0.018));
+  --surface-strong: rgba(32, 28, 30, 0.09);
+  --surface-press: rgba(32, 28, 30, 0.14);
+  --hairline: #e7e3e1;
+  --hairline-soft: rgba(32, 28, 30, 0.08);
+  --text: #201d1f;
+  --text-2: #756f72;
+  --text-3: #b6afb3;
 
-  --accent: #5c2d74;          /* Wimbledon purple, one restrained accent */
+  --accent: #5c2d74;          /* Wimbledon purple — kept for accents, not chrome */
   --accent-ink: #ffffff;      /* text/icon colour on top of --accent */
   --cyan: #1e7b3e;            /* courtside green, used for the "today" marker */
   --violet: #9b5fb8;
@@ -30,8 +30,8 @@
   --r-lg: 22px;
   --r-xl: 30px;
 
-  --shadow-float: 0 14px 34px rgba(58, 20, 74, 0.18);
-  --shadow-card: 0 1px 2px rgba(58, 20, 74, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-float: 0 14px 34px rgba(30, 26, 28, 0.16);
+  --shadow-card: 0 1px 2px rgba(30, 26, 28, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 
@@ -66,7 +66,7 @@ button {
 .aurora .glow {
   position: absolute; top: -34vmax; left: 50%; transform: translateX(-50%);
   width: 90vmax; height: 90vmax; border-radius: 50%;
-  background: radial-gradient(circle, rgba(92, 45, 116, 0.09), transparent 62%);
+  background: radial-gradient(circle, rgba(92, 45, 116, 0.06), transparent 62%);
   animation: breathe 9s ease-in-out infinite;
 }
 @keyframes breathe {
@@ -76,7 +76,7 @@ button {
 .aurora .glow-2 {
   position: absolute; bottom: -28vmax; right: -14vmax;
   width: 72vmax; height: 72vmax; border-radius: 50%;
-  background: radial-gradient(circle, rgba(30, 123, 62, 0.08), transparent 62%);
+  background: radial-gradient(circle, rgba(30, 123, 62, 0.075), transparent 62%);
   animation: breathe2 11s ease-in-out infinite;
 }
 @keyframes breathe2 {
@@ -195,7 +195,7 @@ main {
 
 .progress-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .progress-ring circle { fill: none; stroke-width: 7; stroke-linecap: round; }
-.ring-track { stroke: rgba(92,45,116,0.12); }
+.ring-track { stroke: rgba(32,28,30,0.10); }
 .ring-fill {
   stroke: url(#ringGrad);
   stroke-dasharray: 691.15; stroke-dashoffset: 691.15;
@@ -208,13 +208,13 @@ main {
   width: calc(100% - 30px); height: calc(100% - 30px);
   border-radius: 50%; border: 0; cursor: pointer;
   display: grid; place-content: center; gap: 2px; text-align: center;
-  background: linear-gradient(165deg, #ffffff, #faf6fc);
+  background: linear-gradient(165deg, #ffffff, #f7f5f2);
   box-shadow: var(--shadow-float);
   transition: transform .22s var(--spring), box-shadow .22s;
   touch-action: manipulation;
   overflow: hidden;
 }
-.tap-btn:active { transform: scale(0.955); box-shadow: 0 8px 20px rgba(58,20,74,0.18); }
+.tap-btn:active { transform: scale(0.955); box-shadow: 0 8px 20px rgba(30,26,28,0.16); }
 .tap-btn.bump { animation: bump .38s var(--spring); }
 @keyframes bump { 0% { transform: scale(0.955); } 55% { transform: scale(1.03); } 100% { transform: scale(1); } }
 
@@ -290,7 +290,7 @@ main {
 
 .grouped-list {
   border-radius: var(--r-lg); overflow: hidden;
-  background: linear-gradient(165deg, #ffffff, #faf6fc);
+  background: linear-gradient(165deg, #ffffff, #f7f5f2);
 }
 
 .row-wrap { position: relative; overflow: hidden; }
@@ -314,8 +314,8 @@ main {
    delete button sits absolutely behind every row in the same clipped
    row-wrap, and a see-through background lets it bleed through even
    when the row isn't swiped open. */
-.row:active { background-color: #efe7f2; }
-.row.live { background-color: #f1e6f5; }
+.row:active { background-color: #efece9; }
+.row.live { background-color: #f2eef4; }
 
 .row-count {
   min-width: 34px; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent);
@@ -390,7 +390,7 @@ main {
 
 .panel {
   padding: 16px; border-radius: var(--r-xl); margin-top: 14px;
-  background: linear-gradient(165deg, #ffffff, #faf6fc);
+  background: linear-gradient(165deg, #ffffff, #f7f5f2);
 }
 .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .panel-head h3 { font-size: 15px; font-weight: 600; }
@@ -441,7 +441,7 @@ main {
   position: fixed; left: 50%; transform: translate(-50%, 20px);
   bottom: calc(98px + var(--safe-b)); z-index: 50;
   padding: 11px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: #fff;
-  background: rgba(36, 23, 38, 0.92); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(28, 26, 28, 0.92); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow: var(--shadow-float); opacity: 0; pointer-events: none;
   transition: opacity .25s, transform .25s var(--spring-soft);
   max-width: calc(100% - 40px); text-align: center;
@@ -461,8 +461,8 @@ main {
   width: min(100%, 520px); margin: 0 auto;
   padding: 8px 20px calc(24px + var(--safe-b));
   border-radius: var(--r-xl) var(--r-xl) 0 0;
-  background: linear-gradient(180deg, #ffffff, #faf6fc);
-  box-shadow: 0 -18px 50px rgba(58,20,74,0.20);
+  background: linear-gradient(180deg, #ffffff, #f7f5f2);
+  box-shadow: 0 -18px 50px rgba(30,26,28,0.18);
   animation: sheetUp .38s var(--spring) both;
   touch-action: none;
 }
@@ -471,7 +471,7 @@ main {
 @keyframes sheetDown { to { transform: translateY(100%); } }
 
 .sheet-grabber { display: grid; place-items: center; padding: 10px 0 6px; cursor: grab; }
-.sheet-grabber::before { content: ""; width: 36px; height: 5px; border-radius: 999px; background: rgba(92,45,116,0.25); }
+.sheet-grabber::before { content: ""; width: 36px; height: 5px; border-radius: 999px; background: rgba(32,28,30,0.22); }
 
 .sheet h3 { font-size: 19px; margin-bottom: 4px; }
 .sheet p.sub { font-size: 13px; color: var(--text-2); margin-bottom: 16px; }
@@ -512,7 +512,7 @@ main {
 .log-list {
   max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
   border-radius: var(--r-lg);
-  background: linear-gradient(165deg, #ffffff, #faf6fc);
+  background: linear-gradient(165deg, #ffffff, #f7f5f2);
 }
 .log-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 14px; }
 .log-row + .log-row { border-top: 1px solid var(--hairline-soft); }
