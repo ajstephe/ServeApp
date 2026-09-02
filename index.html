@@ -16,7 +16,9 @@
 <body>
   <div class="aurora" aria-hidden="true">
     <span class="glow"></span>
+    <span class="glow-2"></span>
   </div>
+  <div class="grain" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="brand">
@@ -51,6 +53,12 @@
       <div class="counter-wrap">
         <div class="ring-stack">
           <svg class="progress-ring" viewBox="0 0 240 240" aria-hidden="true">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#9b5fb8" />
+                <stop offset="100%" stop-color="#5c2d74" />
+              </linearGradient>
+            </defs>
             <circle class="ring-track" cx="120" cy="120" r="110" />
             <circle class="ring-fill" id="ringFill" cx="120" cy="120" r="110" />
           </svg>

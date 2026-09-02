@@ -9,7 +9,7 @@
 :root {
   --bg: #f6f1fa;
   --bg-elevated: #ffffff;
-  --surface: rgba(92, 45, 116, 0.055);
+  --surface: linear-gradient(165deg, rgba(92, 45, 116, 0.075), rgba(92, 45, 116, 0.03));
   --surface-strong: rgba(92, 45, 116, 0.10);
   --surface-press: rgba(92, 45, 116, 0.16);
   --hairline: #e7dcee;
@@ -31,6 +31,7 @@
   --r-xl: 30px;
 
   --shadow-float: 0 14px 34px rgba(58, 20, 74, 0.18);
+  --shadow-card: 0 1px 2px rgba(58, 20, 74, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 
@@ -71,6 +72,25 @@ button {
 @keyframes breathe {
   0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
   50%      { opacity: 1;    transform: translateX(-50%) scale(1.05); }
+}
+.aurora .glow-2 {
+  position: absolute; bottom: -28vmax; right: -14vmax;
+  width: 72vmax; height: 72vmax; border-radius: 50%;
+  background: radial-gradient(circle, rgba(30, 123, 62, 0.08), transparent 62%);
+  animation: breathe2 11s ease-in-out infinite;
+}
+@keyframes breathe2 {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+
+/* Fine grain over the whole page — the one thing that reliably kills a
+   "flat" look; kept faint enough to read as paper texture, not noise. */
+.grain {
+  position: fixed; inset: 0; z-index: 45; pointer-events: none;
+  opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
 }
 
 /* ── Top bar (a condensing large-title nav bar) ─────────── */
@@ -116,7 +136,7 @@ button {
 
 .icon-btn {
   display: grid; place-items: center; width: 40px; height: 40px; flex: none;
-  border-radius: 50%; border: 0; background: var(--surface); cursor: pointer;
+  border-radius: 50%; border: 0; background: var(--surface); box-shadow: var(--shadow-card); cursor: pointer;
   transition: background .15s, transform .12s var(--ease-tap), opacity .12s;
 }
 .icon-btn.sm { width: 36px; height: 36px; }
@@ -138,14 +158,14 @@ main {
 .view-head h2 { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; }
 .chip {
   font-size: 12.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px;
-  background: var(--surface); color: var(--text-2);
+  background: var(--surface); box-shadow: var(--shadow-card); color: var(--text-2);
 }
 
 /* ── Session strip ──────────────────────────────────────── */
 .session-strip {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 14px; border-radius: var(--r-lg);
-  background: var(--surface); margin-top: 4px;
+  background: var(--surface); box-shadow: var(--shadow-card); margin-top: 4px;
   transition: transform .12s var(--ease-tap), opacity .12s;
 }
 .session-strip.is-tappable { cursor: pointer; }
@@ -177,7 +197,7 @@ main {
 .progress-ring circle { fill: none; stroke-width: 7; stroke-linecap: round; }
 .ring-track { stroke: rgba(92,45,116,0.12); }
 .ring-fill {
-  stroke: var(--accent);
+  stroke: url(#ringGrad);
   stroke-dasharray: 691.15; stroke-dashoffset: 691.15;
   transition: stroke-dashoffset .6s var(--spring-soft);
   filter: drop-shadow(0 0 6px rgba(92,45,116,0.45));
@@ -188,7 +208,7 @@ main {
   width: calc(100% - 30px); height: calc(100% - 30px);
   border-radius: 50%; border: 0; cursor: pointer;
   display: grid; place-content: center; gap: 2px; text-align: center;
-  background: var(--bg-elevated);
+  background: linear-gradient(165deg, #ffffff, #faf6fc);
   box-shadow: var(--shadow-float);
   transition: transform .22s var(--spring), box-shadow .22s;
   touch-action: manipulation;
@@ -233,7 +253,7 @@ main {
 .pill-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 14px 16px; border-radius: var(--r-lg); cursor: pointer; font-size: 15px; font-weight: 600;
-  background: var(--surface); border: 0;
+  background: var(--surface); box-shadow: var(--shadow-card); border: 0;
   transition: transform .12s var(--ease-tap), background .15s, opacity .12s;
 }
 .pill-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
@@ -244,7 +264,7 @@ main {
 .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
 .mini-card {
   display: grid; gap: 3px; justify-items: center; padding: 13px 8px;
-  border-radius: var(--r-lg); background: var(--surface);
+  border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-card);
 }
 .mini-num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .mini-lbl { font-size: 11px; color: var(--text-2); letter-spacing: 0.01em; }
@@ -269,7 +289,8 @@ main {
 .day-group { margin-bottom: 4px; }
 
 .grouped-list {
-  border-radius: var(--r-lg); overflow: hidden; background: var(--bg-elevated);
+  border-radius: var(--r-lg); overflow: hidden;
+  background: linear-gradient(165deg, #ffffff, #faf6fc);
 }
 
 .row-wrap { position: relative; overflow: hidden; }
@@ -362,13 +383,14 @@ main {
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .stat-card {
   display: grid; gap: 4px; justify-items: center; padding: 18px 8px;
-  border-radius: var(--r-lg); background: var(--surface);
+  border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-card);
 }
 .stat-num { font-size: 25px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
 .stat-lbl { font-size: 11px; color: var(--text-2); text-align: center; }
 
 .panel {
-  padding: 16px; border-radius: var(--r-xl); background: var(--bg-elevated); margin-top: 14px;
+  padding: 16px; border-radius: var(--r-xl); margin-top: 14px;
+  background: linear-gradient(165deg, #ffffff, #faf6fc);
 }
 .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .panel-head h3 { font-size: 15px; font-weight: 600; }
@@ -401,7 +423,7 @@ main {
   width: min(calc(100% - 28px), 480px); padding: 7px;
   border-radius: var(--r-xl);
   background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: var(--shadow-float); border: 0.5px solid var(--hairline-soft);
+  box-shadow: var(--shadow-float), inset 0 1px 0 rgba(255,255,255,0.9); border: 0.5px solid var(--hairline-soft);
 }
 .tab {
   display: grid; justify-items: center; gap: 3px; padding: 9px 4px;
@@ -439,7 +461,7 @@ main {
   width: min(100%, 520px); margin: 0 auto;
   padding: 8px 20px calc(24px + var(--safe-b));
   border-radius: var(--r-xl) var(--r-xl) 0 0;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff, #faf6fc);
   box-shadow: 0 -18px 50px rgba(58,20,74,0.20);
   animation: sheetUp .38s var(--spring) both;
   touch-action: none;
@@ -489,7 +511,8 @@ main {
 
 .log-list {
   max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
-  border-radius: var(--r-lg); background: var(--bg-elevated);
+  border-radius: var(--r-lg);
+  background: linear-gradient(165deg, #ffffff, #faf6fc);
 }
 .log-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 14px; }
 .log-row + .log-row { border-top: 1px solid var(--hairline-soft); }
