@@ -56,6 +56,10 @@
       </div>
 
       <div class="counter-wrap">
+        <button class="overheads-btn" id="overheadsBtn" aria-label="Count one overhead">
+          <span class="overheads-count" id="overheadsCount">0</span>
+          <span class="overheads-label">OVERHEADS</span>
+        </button>
         <div class="ring-stack">
           <svg class="progress-ring" viewBox="0 0 240 240" aria-hidden="true">
             <defs>
@@ -82,13 +86,13 @@
         </div>
       </div>
 
-      <div class="action-row">
+      <div class="action-row" id="actionRow">
         <button class="pill-btn danger" id="undoBtn" disabled>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14H8"/></svg>
           Undo
         </button>
         <button class="pill-btn" id="newSessionBtn">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" id="newSessionIcon"><path d="M12 5v14M5 12h14"/></svg>
           New session
         </button>
       </div>
@@ -146,6 +150,7 @@
         <div class="stat-card"><span class="stat-num" id="sBest">0</span><span class="stat-lbl">Best day</span></div>
         <div class="stat-card"><span class="stat-num" id="sDays">0</span><span class="stat-lbl">Active days</span></div>
         <div class="stat-card"><span class="stat-num" id="sStreak">0</span><span class="stat-lbl">Day streak</span></div>
+        <div class="stat-card"><span class="stat-num" id="sOverheads">0</span><span class="stat-lbl">Overheads</span></div>
       </div>
       <div class="panel">
         <div class="panel-head"><h3>Last 14 days</h3><span class="chip" id="chartTotal">0</span></div>

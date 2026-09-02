@@ -186,8 +186,31 @@ main {
 .ghost-btn:active { transform: scale(0.94); opacity: 0.8; }
 
 /* ── The tap dial (Activity-ring style) ─────────────────── */
-.counter-wrap { display: grid; place-items: center; padding: 22px 0 18px; }
+.counter-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 0 12px; }
 .ring-stack { position: relative; width: var(--tap-size, min(68vw, 300px)); height: var(--tap-size, min(68vw, 300px)); display: grid; place-items: center; }
+
+.overheads-btn {
+  --overheads-size: min(33vw, 142px);
+  width: var(--overheads-size); height: var(--overheads-size); flex: none;
+  border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-content: center; gap: 2px; text-align: center;
+  background: linear-gradient(165deg, #f1f8f2, #dcefe0);
+  box-shadow: 0 10px 24px rgba(30,26,28,0.14);
+  transition: transform .22s var(--spring), box-shadow .22s, background .3s;
+  touch-action: manipulation;
+}
+.overheads-btn:active { transform: scale(0.94); }
+.overheads-btn.bump { animation: bump .38s var(--spring); }
+.overheads-count {
+  font-size: clamp(26px, 9vw, 40px); font-weight: 800; line-height: 1;
+  letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.overheads-count.tick { animation: tick .32s var(--spring); }
+.overheads-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; color: var(--cyan); margin-top: 4px; }
+
+.overheads-btn.is-idle { background: linear-gradient(165deg, rgba(32,28,30,0.045), rgba(32,28,30,0.018)); box-shadow: 0 6px 16px rgba(30,26,28,0.08); }
+.overheads-btn.is-idle .overheads-count, .overheads-btn.is-idle .overheads-label { color: var(--text-3); }
 
 .progress-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .progress-ring circle { fill: none; stroke-width: 7; stroke-linecap: round; }
@@ -227,6 +250,13 @@ main {
 .tap-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.26em; color: var(--accent); }
 .tap-hint { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
 
+/* Before a session has started, the dial visually sits at rest — a
+   player starts the clock with the Start Session button rather than
+   ambiguously via their first tap. Tapping still counts (and starts
+   a session on that serve's own timestamp) as a fallback. */
+.tap-btn.is-idle { background: linear-gradient(165deg, #fbfaf5, #f1efe4); box-shadow: 0 14px 34px rgba(30,26,28,0.10); }
+.tap-btn.is-idle .tap-count, .tap-btn.is-idle .tap-label { color: var(--text-3); }
+
 .fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: visible; }
 .float-plus {
   position: absolute; font-size: 17px; font-weight: 700; color: var(--accent);
@@ -246,6 +276,14 @@ main {
 
 /* ── Action row / mini stats ────────────────────────────── */
 .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.action-row.is-idle { grid-template-columns: 1fr; }
+.pill-btn-cta {
+  padding: 18px; font-size: 17px; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 14px 30px rgba(58,20,74,0.30);
+}
+.pill-btn-cta svg { width: 19px; height: 19px; }
+.pill-btn-cta:active:not(:disabled) { opacity: 0.9; }
 .pill-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 14px 16px; border-radius: var(--r-lg); cursor: pointer; font-size: 15px; font-weight: 600;
@@ -256,15 +294,16 @@ main {
 .pill-btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.8; }
 .pill-btn:disabled { opacity: 0.34; cursor: default; }
 .pill-btn.danger { color: var(--danger); background: rgba(214,58,58,0.13); }
+.pill-btn[hidden] { display: none; }
 
-.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
 .mini-card {
   display: grid; gap: 3px; justify-items: center; padding: 13px 8px;
   border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-card);
 }
 .mini-num { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .mini-lbl { font-size: 11px; color: var(--text-2); letter-spacing: 0.01em; }
-.serve-goal-line { text-align: center; font-size: 13px; color: var(--text-2); margin-top: 14px; }
+.serve-goal-line { text-align: center; font-size: 13px; color: var(--text-2); margin-top: 8px; }
 .link-btn {
   background: none; border: none; color: var(--accent); font-weight: 700; cursor: pointer;
   padding: 2px 4px; transition: opacity .12s;
@@ -539,7 +578,8 @@ main {
   .brand h1 { font-size: 22px; }
   .brand p { display: none; }
   .session-strip { padding: 9px 12px; }
-  .counter-wrap { padding: 10px 0 8px; }
+  .counter-wrap { padding: 10px 0 8px; gap: 10px; }
+  .overheads-btn { --overheads-size: min(30vw, 120px); }
   .tap-hint { font-size: 10.5px; margin-top: 3px; }
   .mini-card { padding: 10px 6px; }
   .mini-num { font-size: 19px; }
