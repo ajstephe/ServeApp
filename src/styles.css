@@ -479,6 +479,7 @@ main {
 }
 .sheet-menu button:active { background-color: var(--surface-strong); }
 .sheet-menu button.destructive { color: var(--danger); }
+.sheet-menu button:disabled { color: var(--text-2); cursor: default; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -493,7 +494,7 @@ main {
   .brand p { display: none; }
   .session-strip { padding: 9px 12px; }
   .counter-wrap { padding: 10px 0 8px; }
-  .tap-hint { display: none; }
+  .tap-hint { font-size: 10.5px; margin-top: 3px; }
   .mini-card { padding: 10px 6px; }
   .mini-num { font-size: 19px; }
   .serve-goal-line { margin-top: 9px; }
