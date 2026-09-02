@@ -397,8 +397,13 @@ import { Store } from './store.js';
 
     document.addEventListener('pointerdown', (e) => {
       const row = e.target.closest('.row');
-      if (openRow && row !== openRow) closeOpenRow();
-      if (!row || e.target.closest('.row-delete-action')) return;
+      const onDeleteAction = e.target.closest('.row-delete-action');
+      // The delete button lives beside .row, not inside it (it's revealed
+      // from underneath), so a tap on it isn't a tap on `row` — without this
+      // check it read as "tapped outside the open row" and closed the row
+      // out from under the tap before the click could ever reach the button.
+      if (openRow && row !== openRow && !onDeleteAction) closeOpenRow();
+      if (!row || onDeleteAction) return;
       dragEl = row; startX = e.clientX; startY = e.clientY; dx = 0;
       deciding = true; horizontal = false;
     });
