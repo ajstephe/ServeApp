@@ -277,13 +277,6 @@ main {
 /* ── Action row / mini stats ────────────────────────────── */
 .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .action-row.is-idle { grid-template-columns: 1fr; }
-.pill-btn-cta {
-  padding: 18px; font-size: 17px; font-weight: 700;
-  background: var(--accent); color: var(--accent-ink);
-  box-shadow: 0 14px 30px rgba(58,20,74,0.30);
-}
-.pill-btn-cta svg { width: 19px; height: 19px; }
-.pill-btn-cta:active:not(:disabled) { opacity: 0.9; }
 .pill-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 14px 16px; border-radius: var(--r-lg); cursor: pointer; font-size: 15px; font-weight: 600;
@@ -295,6 +288,13 @@ main {
 .pill-btn:disabled { opacity: 0.34; cursor: default; }
 .pill-btn.danger { color: var(--danger); background: rgba(214,58,58,0.13); }
 .pill-btn[hidden] { display: none; }
+.pill-btn-cta {
+  padding: 18px; font-size: 17px; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 14px 30px rgba(58,20,74,0.30);
+}
+.pill-btn-cta svg { width: 19px; height: 19px; }
+.pill-btn-cta:active:not(:disabled) { opacity: 0.9; }
 
 .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
 .mini-card {
