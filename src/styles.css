@@ -145,8 +145,14 @@ main {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 12px 14px; border-radius: var(--r-lg);
   background: var(--surface); margin-top: 4px;
+  transition: transform .12s var(--ease-tap), opacity .12s;
 }
+.session-strip.is-tappable { cursor: pointer; }
+.session-strip.is-tappable:active { transform: scale(0.98); opacity: 0.85; }
 .strip-left { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.strip-right { display: flex; align-items: center; gap: 8px; flex: none; }
+.strip-chevron { display: none; }
+.session-strip.is-tappable .strip-chevron { display: block; }
 .strip-title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .strip-meta { font-size: 12.5px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: #48484a; flex: none; }
@@ -469,6 +475,22 @@ main {
 }
 .adj-btn:active { transform: scale(0.9); opacity: 0.8; }
 .adj-count { text-align: center; font-size: 27px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ── Serve log ──────────────────────────────────────────── */
+.log-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
+.log-summary > div { display: grid; gap: 2px; justify-items: center; padding: 12px 8px; border-radius: var(--r-lg); background: var(--surface); }
+.log-summary-num { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.log-summary-lbl { font-size: 11px; color: var(--text-2); }
+
+.log-list {
+  max-height: 46vh; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+  border-radius: var(--r-lg); background: var(--bg-elevated);
+}
+.log-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 14px; }
+.log-row + .log-row { border-top: 1px solid var(--hairline-soft); }
+.log-index { width: 24px; flex: none; color: var(--text-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.log-time { flex: 1; font-variant-numeric: tabular-nums; }
+.log-gap { color: var(--accent); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
 
 .sheet-menu { list-style: none; margin: 0; padding: 0; border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
 .sheet-menu li + li { border-top: 1px solid var(--hairline-soft); }
