@@ -129,6 +129,23 @@ import { Store } from './store.js';
     sheet.addEventListener('pointercancel', onUp);
   })();
 
+  // Keep an open sheet clear of the on-screen keyboard. A focused input
+  // inside a fixed-position sheet is the classic case where mobile Safari
+  // doesn't shrink the layout viewport for the keyboard, so a bottom sheet
+  // sized against `inset: 0` ends up rendered partly underneath it. The
+  // VisualViewport API reports the actually-visible area even then, so the
+  // gap between it and the full layout viewport is exactly the keyboard's
+  // height — feed that back in as padding to push the sheet up above it.
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const updateKeyboardInset = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty('--kb-inset', `${inset}px`);
+    };
+    vv.addEventListener('resize', updateKeyboardInset);
+    vv.addEventListener('scroll', updateKeyboardInset);
+  }
+
   /* ── COUNT view ──────────────────────────────────────── */
   function renderCount() {
     const s = Store.active();
