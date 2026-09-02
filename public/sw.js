@@ -2,7 +2,7 @@
    The built JS/CSS bundle gets a content hash in its filename, so it isn't
    listed here; the fetch handler below caches it (and everything else)
    the first time it's requested, and serves it from cache after that. */
-const CACHE = 'serveapp-v9';
+const CACHE = 'serveapp-v10';
 const SHELL_PAGE = './index.html';
 const SHELL = [
   './',
