@@ -130,12 +130,18 @@ import { Store } from './store.js';
   })();
 
   /* ── COUNT view ──────────────────────────────────────── */
+  const CTA_ICON = '<path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/>';
+  const PLUS_ICON = '<path d="M12 5v14M5 12h14"/>';
+
   function renderCount() {
     const s = Store.active();
     const goal = Store.getGoal();
     const count = s ? s.serves.length : 0;
 
     $('#tapCount').textContent = count;
+    $('#overheadsCount').textContent = s ? s.overheads.length : 0;
+    $('#tapBtn').classList.toggle('is-idle', !s);
+    $('#overheadsBtn').classList.toggle('is-idle', !s);
     $('#sessionName').textContent = s ? s.name : 'No active session';
     $('#liveDot').classList.toggle('live', !!s);
     $('#endSessionBtn').hidden = !s;
@@ -145,8 +151,12 @@ import { Store } from './store.js';
     const pct = Math.min(1, count / goal);
     $('#ringFill').style.strokeDashoffset = String(RING_LEN * (1 - pct));
 
+    $('#undoBtn').hidden = !s;
     $('#undoBtn').disabled = !Store.canUndo();
-    $('#newSessionBtn').lastChild.textContent = s ? ' New session' : ' Start session';
+    $('#actionRow').classList.toggle('is-idle', !s);
+    $('#newSessionBtn').classList.toggle('pill-btn-cta', !s);
+    $('#newSessionIcon').innerHTML = s ? PLUS_ICON : CTA_ICON;
+    $('#newSessionBtn').lastChild.textContent = s ? ' New session' : ' Start Session';
 
     const todayKey = Store.dayKey(Date.now());
     $('#statToday').textContent = Store.totalOn(todayKey);
@@ -161,7 +171,7 @@ import { Store } from './store.js';
     if (!s) {
       $('#sessionClock').textContent = '00:00';
       $('#sessionRate').textContent = '0.0 / min';
-      $('#tapHint').textContent = 'tap anywhere in the circle';
+      $('#tapHint').textContent = 'start a session to begin';
       return;
     }
     const elapsed = sessionLength(s);
@@ -220,7 +230,21 @@ import { Store } from './store.js';
     buzz(12);
   }
 
+  function countOverhead() {
+    Store.addOverhead();
+    const btn = $('#overheadsBtn');
+    btn.classList.remove('bump');
+    void btn.offsetWidth;
+    btn.classList.add('bump');
+    const digits = $('#overheadsCount');
+    digits.classList.remove('tick');
+    void digits.offsetWidth;
+    digits.classList.add('tick');
+    buzz(12);
+  }
+
   $('#tapBtn').addEventListener('click', countServe);
+  $('#overheadsBtn').addEventListener('click', countOverhead);
 
   // The session strip doubles as a shortcut into the active session's serve
   // log — everywhere else in the app, tapping a row for detail is already
@@ -232,10 +256,12 @@ import { Store } from './store.js';
   });
 
   $('#undoBtn').addEventListener('click', () => {
-    const s = Store.undo();
-    if (!s) return toast('Nothing to undo');
+    const result = Store.undo();
+    if (!result) return toast('Nothing to undo');
+    const { session: s, type } = result;
     buzz(20);
-    toast(`Removed one serve — ${s.name} at ${s.serves.length}`);
+    const count = type === 'overhead' ? s.overheads.length : s.serves.length;
+    toast(`Removed one ${type} — ${s.name} at ${count}`);
   });
 
   $('#endSessionBtn').addEventListener('click', () => {
