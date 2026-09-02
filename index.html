@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-<meta name="theme-color" content="#000000" />
+<meta name="theme-color" content="#f6f1fa" />
 <meta name="description" content="Tap to count tennis serves, review sessions, and track your practice on a calendar." />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="ServeApp" />
 <title>ServeApp — Tennis Serve Counter</title>
 <link rel="manifest" href="/manifest.webmanifest" />
@@ -55,9 +55,15 @@
             <circle class="ring-fill" id="ringFill" cx="120" cy="120" r="110" />
           </svg>
           <button class="tap-btn" id="tapBtn" aria-label="Count one serve">
-            <span class="tap-count" id="tapCount">0</span>
-            <span class="tap-label">SERVES</span>
-            <span class="tap-hint" id="tapHint">tap anywhere in the circle</span>
+            <svg class="tap-seam" viewBox="0 0 100 100" aria-hidden="true">
+              <path d="M50,-6 C1,29 99,71 50,106" transform="rotate(24 50 50)"
+                fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" opacity="0.18" />
+            </svg>
+            <div class="tap-content">
+              <span class="tap-count" id="tapCount">0</span>
+              <span class="tap-label">SERVES</span>
+              <span class="tap-hint" id="tapHint">tap anywhere in the circle</span>
+            </div>
           </button>
           <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
         </div>
