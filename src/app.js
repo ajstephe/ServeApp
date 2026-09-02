@@ -139,6 +139,7 @@ import { Store } from './store.js';
     $('#sessionName').textContent = s ? s.name : 'No active session';
     $('#liveDot').classList.toggle('live', !!s);
     $('#endSessionBtn').hidden = !s;
+    $('#sessionStrip').classList.toggle('is-tappable', !!s);
     $('#goalBtn').textContent = goal;
 
     const pct = Math.min(1, count / goal);
@@ -220,6 +221,15 @@ import { Store } from './store.js';
   }
 
   $('#tapBtn').addEventListener('click', countServe);
+
+  // The session strip doubles as a shortcut into the active session's serve
+  // log — everywhere else in the app, tapping a row for detail is already
+  // the pattern. The End button inside it stays its own separate target.
+  $('#sessionStrip').addEventListener('click', (e) => {
+    if (e.target.closest('#endSessionBtn')) return;
+    const s = Store.active();
+    if (s) renderServeLog(s.id);
+  });
 
   $('#undoBtn').addEventListener('click', () => {
     const s = Store.undo();
@@ -410,7 +420,8 @@ import { Store } from './store.js';
         <div class="adj-count" id="adjCount">${s.serves.length}</div>
         <button class="adj-btn" data-adj="1" aria-label="Add one serve">+</button>
       </div>
-      <div class="sheet-actions">
+      <button class="ghost-btn" id="viewLogBtn" style="width:100%; margin: 12px 0 4px;">📈 View serve log</button>
+      <div class="sheet-actions" style="margin-top:12px;">
         <button class="btn-secondary" id="resumeBtn">${live ? 'End session' : 'Resume'}</button>
         <button class="btn-primary" id="saveBtn">Save</button>
       </div>`, (root) => {
@@ -420,6 +431,7 @@ import { Store } from './store.js';
           root.querySelector('#adjCount').textContent = Store.byId(id).serves.length;
         });
       });
+      root.querySelector('#viewLogBtn').addEventListener('click', () => renderServeLog(id));
       root.querySelector('#resumeBtn').addEventListener('click', () => {
         if (live) { Store.endSession(id); toast('Session ended'); }
         else { Store.resumeSession(id); toast(`Resumed ${Store.byId(id).name}`); }
@@ -431,6 +443,50 @@ import { Store } from './store.js';
         toast('Session updated');
       });
     });
+  }
+
+  /* ── Serve log ───────────────────────────────────────── */
+  // Every serve's timestamp is already recorded (that's how the app derives
+  // duration and rate elsewhere) — this just surfaces it directly: each
+  // serve in order, with the gap since the one before it.
+  function renderServeLog(id) {
+    const s = Store.byId(id);
+    if (!s) return;
+    const serves = s.serves;
+    const gaps = [];
+    for (let i = 1; i < serves.length; i++) gaps.push(serves[i] - serves[i - 1]);
+    const avgGap = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+    const fastest = gaps.length ? Math.min(...gaps) : 0;
+    const slowest = gaps.length ? Math.max(...gaps) : 0;
+
+    const items = serves.map((ts, i) => ({
+      n: i + 1,
+      ts,
+      gap: i === 0 ? null : ts - serves[i - 1],
+    }));
+
+    const rows = items.map((it) => `
+      <div class="log-row">
+        <span class="log-index">${it.n}</span>
+        <span class="log-time">${fmtTime(it.ts)}</span>
+        <span class="log-gap">${it.gap === null ? 'First serve' : '+' + fmtDuration(it.gap)}</span>
+      </div>`).join('');
+
+    openSheet(`
+      <h3>Serve log</h3>
+      <p class="sub">${esc(s.name)} · ${fmtDayLabel(Store.dayKey(s.startedAt))}</p>
+      <div class="log-summary">
+        <div><span class="log-summary-num">${serves.length}</span><span class="log-summary-lbl">Serves</span></div>
+        <div><span class="log-summary-num">${gaps.length ? fmtDuration(avgGap) : '—'}</span><span class="log-summary-lbl">Avg gap</span></div>
+        <div><span class="log-summary-num">${gaps.length ? fmtDuration(fastest) : '—'}</span><span class="log-summary-lbl">Fastest</span></div>
+        <div><span class="log-summary-num">${gaps.length ? fmtDuration(slowest) : '—'}</span><span class="log-summary-lbl">Slowest</span></div>
+      </div>
+      ${serves.length
+        ? `<div class="log-list">${rows}</div>`
+        : `<div class="empty">No serves logged yet.</div>`}
+      <div class="sheet-actions" style="grid-template-columns: 1fr; margin-top: 14px;">
+        <button class="btn-secondary" data-close>Close</button>
+      </div>`);
   }
 
   function confirmDelete(id) {
