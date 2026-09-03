@@ -33,7 +33,10 @@ export const Store = (() => {
       if (!parsed || !Array.isArray(parsed.sessions)) return blank();
       const merged = Object.assign(blank(), parsed);
       // Sessions saved before overheads existed won't have the array.
-      merged.sessions.forEach((s) => { if (!Array.isArray(s.overheads)) s.overheads = []; });
+      merged.sessions.forEach((s) => {
+        if (!Array.isArray(s.overheads)) s.overheads = [];
+        if (!s.name) s.name = defaultName(s.startedAt || Date.now());
+      });
       return merged;
     } catch (err) {
       console.warn('ServeApp: could not read saved data', err);

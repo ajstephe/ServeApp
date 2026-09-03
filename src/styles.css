@@ -357,9 +357,8 @@ main {
 }
 .row-body { flex: 1; min-width: 0; }
 .row-title { font-size: 15.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-sub { font-size: 12.5px; color: var(--text-2); margin-top: 1px; }
-.row-tally { font-size: 11.5px; color: var(--text-3); margin-top: 2px; font-variant-numeric: tabular-nums; }
-.row-tally-total { color: var(--accent); font-weight: 700; }
+.row-breakdown { font-size: 12.5px; color: var(--text-2); margin-top: 1px; font-variant-numeric: tabular-nums; }
+.row-meta { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
 .row-chevron { width: 17px; height: 17px; flex: none; color: var(--text-3); fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
 
 .empty {
