@@ -8,7 +8,6 @@ import { Store } from './store.js';
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-  const RING_LEN = 2 * Math.PI * 110;   // r=110 in the SVG viewBox
   let calCursor = startOfMonth(new Date());
   let selectedDay = Store.dayKey(Date.now());
   let clockTimer = null;
@@ -152,7 +151,6 @@ import { Store } from './store.js';
 
   function renderCount() {
     const s = Store.active();
-    const goal = Store.getGoal();
     const count = s ? s.serves.length : 0;
 
     $('#tapCount').textContent = count;
@@ -163,10 +161,6 @@ import { Store } from './store.js';
     $('#liveDot').classList.toggle('live', !!s);
     $('#endSessionBtn').hidden = !s;
     $('#sessionStrip').classList.toggle('is-tappable', !!s);
-    $('#goalBtn').textContent = goal;
-
-    const pct = Math.min(1, count / goal);
-    $('#ringFill').style.strokeDashoffset = String(RING_LEN * (1 - pct));
 
     $('#undoBtn').hidden = !s;
     $('#undoBtn').disabled = !Store.canUndo();
@@ -209,7 +203,7 @@ import { Store } from './store.js';
     }
   }
 
-  function spawnFx(count) {
+  function spawnFx() {
     const layer = $('#fxLayer');
 
     const plus = document.createElement('span');
@@ -234,16 +228,11 @@ import { Store } from './store.js';
     digits.classList.remove('tick');
     void digits.offsetWidth;
     digits.classList.add('tick');
-
-    if (count === Store.getGoal()) {
-      toast(`🎾 Goal reached — ${count} serves!`);
-      buzz([0, 40, 60, 40]);
-    }
   }
 
   function countServe() {
-    const s = Store.addServe();
-    spawnFx(s.serves.length);
+    Store.addServe();
+    spawnFx();
     buzz(12);
   }
 
@@ -289,25 +278,6 @@ import { Store } from './store.js';
   });
 
   $('#newSessionBtn').addEventListener('click', () => promptNewSession());
-
-  $('#goalBtn').addEventListener('click', () => {
-    openSheet(`
-      <h3>Session goal</h3>
-      <p class="sub">The ring around the counter fills as you approach it.</p>
-      <input class="field" id="goalInput" type="number" inputmode="numeric" min="1" value="${Store.getGoal()}" />
-      <div class="sheet-actions">
-        <button class="btn-secondary" data-close>Cancel</button>
-        <button class="btn-primary" id="goalSave">Save</button>
-      </div>`, (root) => {
-      const input = root.querySelector('#goalInput');
-      input.focus(); input.select();
-      root.querySelector('#goalSave').addEventListener('click', () => {
-        Store.setGoal(input.value);
-        closeSheet();
-        toast(`Goal set to ${Store.getGoal()}`);
-      });
-    });
-  });
 
   function promptNewSession() {
     const running = Store.active();

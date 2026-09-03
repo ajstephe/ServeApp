@@ -24,8 +24,6 @@ device in `localStorage`.
   sessions logged on it; tap a session to edit or delete it.
 - **Stats.** Totals, average per session, best day, best session, active days,
   a current day-streak and a 14-day bar chart.
-- **Session goal.** Set a target (default 50) and the ring around the dial fills
-  as you close in on it.
 - **Export.** A `.json` backup for re-importing on another device or browser, or
   a `.xlsx` workbook (Sessions, Daily Totals and Summary sheets) for opening in
   Excel, Numbers or Google Sheets.
@@ -85,7 +83,6 @@ One key, `serveapp.v1`:
 ```jsonc
 {
   "version": 1,
-  "goal": 50,
   "activeId": "s_ab12c3",            // the session currently running, or null
   "sessions": [
     {
