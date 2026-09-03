@@ -364,16 +364,16 @@ import { Store } from './store.js';
   function sessionCard(s) {
     const live = Store.active() && Store.active().id === s.id;
     const total = s.serves.length + s.overheads.length;
+    const breakdown = `${plural(s.serves.length, 'serve')} · ${plural(s.overheads.length, 'overhead')}`;
     const meta = `${fmtTime(s.startedAt)}${s.endedAt ? ` – ${fmtTime(s.endedAt)}` : ''} · ${fmtDuration(sessionLength(s))}${live ? ' · live' : ''}`;
-    const tally = `${plural(s.serves.length, 'serve')} · ${plural(s.overheads.length, 'overhead')} · <span class="row-tally-total">${total} total</span>`;
     return `<div class="row-wrap" data-id="${s.id}">
       <button class="row-delete-action" data-act="delete" aria-label="Delete ${esc(s.name)}">Delete</button>
       <article class="row${live ? ' live' : ''}" data-id="${s.id}" data-act="edit">
-        <span class="row-count">${s.serves.length}</span>
+        <span class="row-count">${total}</span>
         <div class="row-body">
           <div class="row-title">${esc(s.name)}</div>
-          <div class="row-sub">${meta}</div>
-          <div class="row-tally">${tally}</div>
+          <div class="row-breakdown">${breakdown}</div>
+          <div class="row-meta">${meta}</div>
         </div>
         <svg class="row-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>
       </article>
