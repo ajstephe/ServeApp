@@ -5,7 +5,6 @@
 
    {
      version: 1,
-     goal: 50,
      activeId: "s_ab12" | null,
      sessions: [
        { id, name, startedAt, endedAt|null, serves: [epochMs, ...] }
@@ -22,7 +21,7 @@ export const Store = (() => {
   const listeners = [];
 
   function blank() {
-    return { version: 1, goal: 50, activeId: null, sessions: [] };
+    return { version: 1, activeId: null, sessions: [] };
   }
 
   function load() {
@@ -77,7 +76,6 @@ export const Store = (() => {
 
   /* ── reads ───────────────────────────────────────────── */
   const get = () => state;
-  const getGoal = () => state.goal || 50;
   const sessions = () => state.sessions;
   const byId = (id) => state.sessions.find((s) => s.id === id) || null;
   const active = () => (state.activeId ? byId(state.activeId) : null);
@@ -213,11 +211,6 @@ export const Store = (() => {
     emit();
   }
 
-  function setGoal(n) {
-    state.goal = Math.max(1, Math.round(Number(n) || 50));
-    emit();
-  }
-
   function clearAll() {
     state = blank();
     undoStack.length = 0;
@@ -282,7 +275,6 @@ export const Store = (() => {
       });
       added++;
     });
-    if (typeof data.goal === 'number') state.goal = data.goal;
     state.activeId = null;
     emit();
     return added;
@@ -291,7 +283,7 @@ export const Store = (() => {
   const subscribe = (fn) => { listeners.push(fn); return () => listeners.splice(listeners.indexOf(fn), 1); };
 
   return {
-    get, getGoal, setGoal, sessions, byId, active, sessionsOn, dailyTotals, totalOn,
+    get, sessions, byId, active, sessionsOn, dailyTotals, totalOn,
     dailyOverheadTotals, totalOverheadsOn,
     startSession, endSession, resumeSession, addServe, addOverhead, undo, canUndo,
     renameSession, deleteSession, adjust, clearAll,
